@@ -108,14 +108,16 @@ change_settings() {
     
     # Function to loop settings menu
     settings_loop() {
+        load_config # 🌟 FIX: Reload config after any change
+        
         echo -e "\n${BLUE}-------------------------------------${NC}"
         echo -e "${YELLOW} Current Settings:${NC}"
         echo -e "${BLUE}-------------------------------------${NC}"
-        echo -e " 1) CF Email: ${CF_EMAIL:-${RED}NOT SET${NC}}"
-        echo -e " 2) CF API Key: ${CF_API_KEY:-${RED}NOT SET${NC}}"
-        echo -e " 3) CF Zone ID: ${CF_ZONE_ID:-${RED}NOT SET${NC}}"
-        echo -e " 4) CF Record ID: ${CF_RECORD_ID:-${RED}NOT SET${NC}}"
-        echo -e " 5) CF Record Name: ${CF_RECORD_NAME:-${RED}NOT SET${NC}}"
+        echo -e " 1) Cloudflare Email: ${CF_EMAIL:-${RED}NOT SET${NC}}"
+        echo -e " 2) API Key/Token: ${CF_API_KEY:-${RED}NOT SET${NC}}"
+        echo -e " 3) Zone ID (Domain ID): ${CF_ZONE_ID:-${RED}NOT SET${NC}}"
+        echo -e " 4) Record ID (A Record ID): ${CF_RECORD_ID:-${RED}NOT SET${NC}}"
+        echo -e " 5) Record Name (Full Domain): ${CF_RECORD_NAME:-${RED}NOT SET${NC}}"
         echo -e " 6) Update Interval: ${UPDATE_INTERVAL:-5} min"
         echo -e " 7) Toggle Cron (${CRON_ACTIVE:-0})"
         echo -e " 8) Back to Main Menu"
@@ -125,27 +127,34 @@ change_settings() {
 
         case $choice in
             1)
-                read -r -p "Enter new CF Email: " new_value
+                echo -e "${YELLOW}Tip: This is the email linked to your Cloudflare account.${NC}"
+                read -r -p "Enter new CF Email (e.g., user@domain.com): " new_value
                 sudo sed -i "s|CF_EMAIL=\".*\"|CF_EMAIL=\"$new_value\"|" "$CONFIG_FILE"
                 echo -e "${GREEN}Email updated.${NC}"
                 ;;
             2)
-                read -r -p "Enter new CF API Key/Token: " new_value
+                echo -e "${YELLOW}Tip: Use an API Token (preferable) or Global API Key.${NC}"
+                echo -e "${YELLOW}Token must have Zone.DNS Edit permissions.${NC}"
+                read -r -p "Enter new CF API Key/Token (e.g., 6717d793...): " new_value
                 sudo sed -i "s|CF_API_KEY=\".*\"|CF_API_KEY=\"$new_value\"|" "$CONFIG_FILE"
                 echo -e "${GREEN}API Key updated.${NC}"
                 ;;
             3)
-                read -r -p "Enter new CF Zone ID: " new_value
+                echo -e "${YELLOW}Tip: Find this on your domain's Cloudflare dashboard summary page.${NC}"
+                read -r -p "Enter new CF Zone ID (e.g., 3f2c997f...): " new_value
                 sudo sed -i "s|CF_ZONE_ID=\".*\"|CF_ZONE_ID=\"$new_value\"|" "$CONFIG_FILE"
                 echo -e "${GREEN}Zone ID updated.${NC}"
                 ;;
             4)
-                read -r -p "Enter new CF Record ID: " new_value
+                echo -e "${YELLOW}Tip: You need the unique ID of the specific A record you want to update (e.g., your dynamic subdomain).${NC}"
+                echo -e "${YELLOW}You can get this ID using the Cloudflare API or by creating a placeholder record.${NC}"
+                read -r -p "Enter new CF Record ID (e.g., 5f59b24f...): " new_value
                 sudo sed -i "s|CF_RECORD_ID=\".*\"|CF_RECORD_ID=\"$new_value\"|" "$CONFIG_FILE"
                 echo -e "${GREEN}Record ID updated.${NC}"
                 ;;
             5)
-                read -r -p "Enter new CF Record Name (Domain): " new_value
+                echo -e "${YELLOW}Tip: The full domain name of the record (e.g., ddns.example.com).${NC}"
+                read -r -p "Enter new CF Record Name (Domain) (e.g., sub.yourdomain.com): " new_value
                 sudo sed -i "s|CF_RECORD_NAME=\".*\"|CF_RECORD_NAME=\"$new_value\"|" "$CONFIG_FILE"
                 echo -e "${GREEN}Record Name updated.${NC}"
                 ;;
