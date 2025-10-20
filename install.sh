@@ -29,7 +29,7 @@ fi
 echo "Downloading core scripts..."
 sudo mkdir -p "$CONFIG_DIR"
 sudo curl -s "$REPO/cfddns.sh" -o "$CORE_SCRIPT"
-sudo curl -s "$REPO/cfddns-cli.sh" -o "$CLI_SCRIPT"
+sudo curl -s "$REPO/cfddns-cli.sh" -o "$CLI_SCRIPT" # This file now includes the stable while-loop
 
 # 3. Clean and Set Permissions
 echo "Setting permissions..."
@@ -53,7 +53,6 @@ sudo chmod 600 "$CONFIG_FILE"
 echo -e "\n${GREEN}--- Installation Complete! ---${NC}"
 echo "The configuration file has been saved to ${BLUE}$CONFIG_FILE${NC}."
 echo "You MUST now enter your Cloudflare API details, Zone ID, and Record ID."
-echo -e "\n🔥 ${YELLOW}Starting Configuration Menu...${NC}"
+echo -e "\n🔥 ${YELLOW}To start the configuration menu, run: cfddns${NC}"
 
-# Automatically run the CLI after installation for configuration
-$CLI_SCRIPT "config-once"
+# --- REMOVED: Automatic execution of $CLI_SCRIPT to prevent infinite loop ---
