@@ -101,7 +101,7 @@ show_menu() {
 # Function to handle settings changes
 change_settings() {
     
-    # Function to loop settings menu
+    # Function to loop settings menu (Internal loop is required for easy multiple changes)
     settings_loop() {
         load_config
         
@@ -208,7 +208,6 @@ change_settings() {
 }
 
 # --- Command Handler ---
-# Default behavior is to show the menu in an interactive loop.
 case "$1" in
     "update-cron")
         update_cron
@@ -219,31 +218,28 @@ case "$1" in
     "update-ip") 
         $CORE_SCRIPT "MANUAL"
         ;;
-    "config-once") # 🎯 FIX: New Mode: Show menu once and then exit after any operation
+    "config-once") # Mode for installer (Shows menu once, processes selection, and exits)
         show_menu
         read -r -p "Select an option: " OPTION
         case $OPTION in
-            1) $CORE_SCRIPT "MANUAL"; exit 0 ;; # Exit after running script
-            2) view_log; exit 0 ;; # Exit after viewing log
-            3) change_settings; exit 0 ;; # Exit after changing settings
-            4) uninstall_script ;; # Uninstall handles its own exit
-            5) echo -e "${YELLOW}Exiting.${NC}"; exit 0 ;;
-            *) echo -e "${RED}Invalid selection, please try again.${NC}"; exit 0 ;;
+            1) $CORE_SCRIPT "MANUAL" ;;
+            2) view_log ;;
+            3) change_settings ;;
+            4) uninstall_script ;;
+            5) echo -e "${YELLOW}Exiting.${NC}" ;;
+            *) echo -e "${RED}Invalid selection, exiting.${NC}" ;;
         esac
         ;;
-    *) # Default Interactive Loop
-        while true; do
-            show_menu
-            read -r -p "Select an option: " OPTION
-            case $OPTION in
-                1) $CORE_SCRIPT "MANUAL" ;;
-                2) view_log ;;
-                3) change_settings ;;
-                4) uninstall_script ;;
-                5) echo -e "${YELLOW}Exiting.${NC}"; exit 0 ;;
-                *) echo -e "${RED}Invalid selection, please try again.${NC}" ;;
-            esac
-            echo ""
-        done
+    *) # Default behavior: Show menu once and exit (for regular use: cfddns)
+        show_menu
+        read -r -p "Select an option: " OPTION
+        case $OPTION in
+            1) $CORE_SCRIPT "MANUAL" ;;
+            2) view_log ;;
+            3) change_settings ;;
+            4) uninstall_script ;;
+            5) echo -e "${YELLOW}Exiting.${NC}" ;;
+            *) echo -e "${RED}Invalid selection, exiting.${NC}" ;;
+        esac
         ;;
 esac
