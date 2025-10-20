@@ -2,19 +2,20 @@
 
 # --- Installer Script for Cloudflare DDNS (cfddns) ---
 
-REPO="https://raw.githubusercontent.com/nimabbz/cfddns/main"
+REPO="https://raw.githubusercontent.com/nimabbz/cfddns/main" # Your GitHub username
 INSTALL_DIR="/usr/local/bin"
 CONFIG_DIR="/etc/cfddns"
 CONFIG_FILE="$CONFIG_DIR/cfddns.conf"
 CORE_SCRIPT="$INSTALL_DIR/cfddns.sh"
 CLI_SCRIPT="$INSTALL_DIR/cfddns" # The main command
 
-echo "--- Cloudflare DDNS Installer ---"
+echo -e "\n${YELLOW}--- Cloudflare DDNS Installer (cfddns) ---${NC}"
 
 # 1. Check for 'jq' dependency
 if ! command -v jq &> /dev/null; then
-    echo "⚠️ 'jq' is not installed. Installing it now..."
-    sudo apt update && sudo apt install -y jq
+    echo -e "⚠️ ${RED}'jq'${NC} is not installed. Installing it now..."
+    sudo apt update -y
+    sudo apt install -y jq dos2unix # Install dos2unix here too, just in case
 fi
 
 # 2. Download Core Scripts
@@ -23,45 +24,26 @@ sudo mkdir -p "$CONFIG_DIR"
 sudo curl -s "$REPO/cfddns.sh" -o "$CORE_SCRIPT"
 sudo curl -s "$REPO/cfddns-cli.sh" -o "$CLI_SCRIPT"
 
-# 3. Fix Shebang (ensures compatibility with /usr/bin/bash or /bin/bash)
-sudo sed -i '1s|.*|#!/usr/bin/env bash|' "$CORE_SCRIPT"
-sudo sed -i '1s|.*|#!/usr/bin/env bash|' "$CLI_SCRIPT"
-
-# 4. Set Permissions
+# 3. Clean and Set Permissions
+echo "Setting permissions..."
+sudo dos2unix -q "$CORE_SCRIPT" "$CLI_SCRIPT" # Ensure Unix format
 sudo chmod +x "$CORE_SCRIPT"
 sudo chmod +x "$CLI_SCRIPT"
 
-# 5. Create Initial Config File (downloading clean template)
-echo "Downloading configuration template to $CONFIG_FILE..."
+# 4. Create Initial Config File from template
+echo "Creating initial configuration file in ${BLUE}$CONFIG_FILE${NC}..."
+
+# Download the template
 sudo curl -s "$REPO/cfddns.conf.example" -o "$CONFIG_FILE"
 
 # Set secure permissions for the config file
 sudo chmod 600 "$CONFIG_FILE"
 
-# Prompt user for initial sensitive data
-echo ""
-echo "🚨 SECURITY NOTE: Please enter your Cloudflare details now. You can update these later in $CONFIG_FILE"
-read -r -p "Enter CF Email (e.g., user@example.com): " CF_EMAIL_TEMP
-read -r -p "Enter CF API Key/Token: " CF_API_KEY_TEMP
-
-# Use 'sed' to replace the empty values in the config file
-sudo sed -i "s|CF_EMAIL=\"\"|CF_EMAIL=\"$CF_EMAIL_TEMP\"|" "$CONFIG_FILE"
-sudo sed -i "s|CF_API_KEY=\"\"|CF_API_KEY=\"$CF_API_KEY_TEMP\"|" "$CONFIG_FILE"
-
-# Check if sed was successful
-if [ $? -ne 0 ]; then
-    echo "ERROR: Sed failed to update config file. Please edit $CONFIG_FILE manually."
-    exit 1
-fi
-
-echo "Email and API Key saved. You must now manually add Zone ID and Record ID."
-
-# 6. Final Instructions
-echo "--- Installation Complete! ---"
-echo "Configuration has been saved to $CONFIG_FILE"
-echo "You must edit this file to remove or replace the default sensitive information."
-echo ""
-echo "🔥 Next Steps:"
-echo "1. Run: sudo nano $CONFIG_FILE (and update the API keys/IDs)"
-echo "2. Run: cfddns update-cron (to apply the initial settings)"
-echo "3. Run: cfddns (to access the main menu)"
+# 5. Final Instructions
+echo -e "\n${GREEN}--- Installation Complete! ---${NC}"
+echo "The configuration file has been saved to ${BLUE}$CONFIG_FILE${NC}."
+echo "You MUST now enter your Cloudflare API details, Zone ID, and Record ID."
+echo -e "\n🔥 ${YELLOW}NEXT STEPS:${NC}"
+echo -e "1. Run: ${GREEN}cfddns${NC} (to access the main menu)"
+echo -e "2. Select option ${YELLOW}3 (Change Settings)${NC} to input all required IDs/Keys."
+echo -e "3. Activate the Cron Job from the settings menu."

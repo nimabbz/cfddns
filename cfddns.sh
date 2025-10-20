@@ -3,15 +3,25 @@
 # This script checks the server's current public IP against the Cloudflare DNS record
 # and updates the record if a difference is found.
 
-# --- Configuration (Loaded from environment variables) ---
-CF_EMAIL="${CF_EMAIL}"
-CF_API_KEY="${CF_API_KEY}"
-CF_ZONE_ID="${CF_ZONE_ID}"
-CF_RECORD_ID="${CF_RECORD_ID}"
-CF_RECORD_NAME="${CF_RECORD_NAME}"
+# --- Configuration Loading ---
+CONFIG_FILE="/etc/cfddns/cfddns.conf"
+if [ -f "$CONFIG_FILE" ]; then
+    source "$CONFIG_FILE"
+else
+    # Log an error if the config file is missing
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - CRITICAL ERROR: Config file missing at $CONFIG_FILE. Exiting." >> "/var/log/cfddns.log"
+    exit 1
+fi
+
 LOG_FILE="/var/log/cfddns.log"
 TTL="120"
 PROXY="true"
+
+# --- Dependency Check ---
+if ! command -v jq &> /dev/null; then
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - ERROR: 'jq' is not installed. Cannot parse Cloudflare API response." >> "$LOG_FILE"
+    exit 1
+fi
 
 # --- Function to get the server's current public IP ---
 get_current_ip() {
@@ -19,19 +29,13 @@ get_current_ip() {
     curl -s https://api.ipify.org
 }
 
-# --- Function to get the current IP from Cloudflare DNS record using jq ---
+# --- Function to get the current IP from Cloudflare DNS record ---
 get_cf_ip() {
-    # Check if jq is installed
-    if ! command -v jq &> /dev/null; then
-        echo "$(date '+%Y-%m-%d %H:%M:%S') - ERROR: 'jq' is not installed. Cannot parse Cloudflare API response." >> "$LOG_FILE"
-        return 1
-    fi
-    
     # Retrieve DNS record details and extract the IP content
     curl -s -X GET "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/dns_records/$CF_RECORD_ID" \
          -H "X-Auth-Email: $CF_EMAIL" \
          -H "Authorization: Bearer $CF_API_KEY" | \
-         jq -r '.result.content' 
+         jq -r '.result.content'
 }
 
 # --- Function to update the IP on Cloudflare ---
@@ -86,7 +90,7 @@ if [ "$CURRENT_IP" != "$CF_IP" ]; then
     # Update Cloudflare
     update_cf_ip "$CURRENT_IP"
 else
-    # Only log to file if running manually or debugging
+    # Log only if running manually (not via cron job)
     # echo "$TIMESTAMP - INFO: IP $CURRENT_IP is unchanged." >> /dev/null
-    exit 0 # Exit quietly for Cron Job
+    exit 0
 fi
