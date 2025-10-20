@@ -1,2 +1,40 @@
-# توجه: YourUsername را با نام کاربری خود در گیت‌هاب جایگزین کنید
+# در پوشه D:/transfer nima/cfddns (master)
+
+# اضافه کردن فایل اصلاح شده
+git add cfddns-cli.sh
+
+# ثبت تغییرات نهایی
+git commit -m "Fix: Implemented instant config refresh in settings menu; Improved user guidance and naming."
+
+# ارسال به گیت‌هاب
+git push -u origin master:main
+
+
+===========================
+
+
+echo "--- Starting full uninstallation of cfddns ---"
+
+# حذف کران جاب
+sudo crontab -l 2>/dev/null | grep -v 'cfddns' | sudo crontab -
+
+# حذف فایل‌های اجرایی، تنظیمات و لاگ
+sudo rm -f /usr/local/bin/cfddns
+sudo rm -f /usr/local/bin/cfddns.sh
+sudo rm -rf /etc/cfddns
+sudo rm -f /var/log/cfddns.log
+
+echo "--- Uninstallation complete. ---"
+
+
+
+
+======================
+
+
+
 curl -sL https://raw.githubusercontent.com/nimabbz/cfddns/main/install.sh | sudo bash
+
+
+dns zone edit api cf
+cBVQQ9TNbsZioGg6z1lB-CIx1gbBDaXOFWQi-N_R

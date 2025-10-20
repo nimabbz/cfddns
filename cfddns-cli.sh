@@ -12,9 +12,7 @@ NC='\033[0m' # No Color
 
 # Function to source the config file
 load_config() {
-    # Ensure config file exists and is clean before sourcing
     if [ -f "$CONFIG_FILE" ]; then
-        # Clean potential DOS line endings just in case
         dos2unix -q "$CONFIG_FILE" 2>/dev/null
         source "$CONFIG_FILE"
     fi
@@ -23,7 +21,6 @@ load_config() {
 # Function to update cron job based on config settings
 update_cron() {
     load_config
-    # Create or update crontab entry
     (sudo crontab -l 2>/dev/null | grep -v "$CORE_SCRIPT"; \
      if [ "$CRON_ACTIVE" == "1" ]; then \
         echo "*/$UPDATE_INTERVAL * * * * $CORE_SCRIPT"; \
@@ -40,7 +37,7 @@ update_cron() {
 # Function to disable the cron job setting in config
 disable_cron() {
     sudo sed -i "s|CRON_ACTIVE=1|CRON_ACTIVE=0|" "$CONFIG_FILE"
-    update_cron # Remove cron lines by calling update_cron
+    update_cron
 }
 
 # Function to view log file
@@ -80,7 +77,6 @@ uninstall_script() {
 show_menu() {
     load_config
     
-    # Determine Status Colors
     if [ "$CRON_ACTIVE" == "1" ]; then
         STATUS_TEXT="${GREEN}ACTIVE${NC}"
     else
@@ -107,7 +103,7 @@ change_settings() {
     
     # Function to loop settings menu
     settings_loop() {
-        load_config # 🎯 FIX: Reload config after applying changes
+        load_config
         
         echo -e "\n${BLUE}-------------------------------------${NC}"
         echo -e "${YELLOW} Current Settings:${NC}"
@@ -124,45 +120,68 @@ change_settings() {
 
         read -r -p "Select setting to change (1-8): " choice
 
+        # Function to confirm editing
+        confirm_edit() {
+            local setting_name=$1
+            read -r -p "$(echo -e "${RED}Do you want to edit $setting_name? (yes/no): ${NC}")" confirmation
+            if [[ "$confirmation" != "yes" ]]; then
+                echo -e "${YELLOW}Edit cancelled.${NC}"
+                return 1
+            fi
+            return 0
+        }
+
         case $choice in
             1)
-                echo -e "${YELLOW}راهنما: ایمیلی که برای ورود به حساب Cloudflare استفاده می‌کنید.${NC}"
-                read -r -p "Enter new CF Email (مثال: user@domain.com): " new_value
-                sudo sed -i "s|CF_EMAIL=\".*\"|CF_EMAIL=\"$new_value\"|" "$CONFIG_FILE"
-                echo -e "${GREEN}Email updated.${NC}"
+                if confirm_edit "CF Email"; then
+                    echo -e "${YELLOW}Hint: The email linked to your Cloudflare account.${NC}"
+                    read -r -p "Enter new CF Email (e.g., user@domain.com): " new_value
+                    sudo sed -i "s|CF_EMAIL=\".*\"|CF_EMAIL=\"$new_value\"|" "$CONFIG_FILE"
+                    echo -e "${GREEN}Email updated.${NC}"
+                fi
                 ;;
             2)
-                echo -e "${YELLOW}راهنما: ترجیحاً از یک API Token با دسترسی Zone.DNS Edit استفاده کنید. (Global Key توصیه نمی‌شود)${NC}"
-                read -r -p "Enter new CF API Key/Token (مثال: 6717d793a69c0cb3...): " new_value
-                sudo sed -i "s|CF_API_KEY=\".*\"|CF_API_KEY=\"$new_value\"|" "$CONFIG_FILE"
-                echo -e "${GREEN}API Key updated.${NC}"
+                if confirm_edit "CF API Key/Token"; then
+                    echo -e "${YELLOW}Hint: Use an API Token (preferable) with Zone.DNS Edit permissions.${NC}"
+                    read -r -p "Enter new CF API Key/Token (e.g., 6717d793...): " new_value
+                    sudo sed -i "s|CF_API_KEY=\".*\"|CF_API_KEY=\"$new_value\"|" "$CONFIG_FILE"
+                    echo -e "${GREEN}API Key updated.${NC}"
+                fi
                 ;;
             3)
-                echo -e "${YELLOW}راهنما: این شناسه در صفحه‌ی Overview دامنه در پنل Cloudflare قابل مشاهده است.${NC}"
-                read -r -p "Enter new CF Zone ID (مثال: 3f2c997f66e50acdc...): " new_value
-                sudo sed -i "s|CF_ZONE_ID=\".*\"|CF_ZONE_ID=\"$new_value\"|" "$CONFIG_FILE"
-                echo -e "${GREEN}Zone ID updated.${NC}"
+                if confirm_edit "CF Zone ID"; then
+                    echo -e "${YELLOW}Hint: Found on your domain's Cloudflare dashboard summary page.${NC}"
+                    read -r -p "Enter new CF Zone ID (e.g., 3f2c997f...): " new_value
+                    sudo sed -i "s|CF_ZONE_ID=\".*\"|CF_ZONE_ID=\"$new_value\"|" "$CONFIG_FILE"
+                    echo -e "${GREEN}Zone ID updated.${NC}"
+                fi
                 ;;
             4)
-                echo -e "${YELLOW}راهنما: شناسه رکورد A یا AAAA (مثلاً sub.domain.com). این شناسه برای هر رکورد منحصر به فرد است.${NC}"
-                read -r -p "Enter new CF Record ID (مثال: 5f59b24f690417bf6...): " new_value
-                sudo sed -i "s|CF_RECORD_ID=\".*\"|CF_RECORD_ID=\"$new_value\"|" "$CONFIG_FILE"
-                echo -e "${GREEN}Record ID updated.${NC}"
+                if confirm_edit "CF Record ID"; then
+                    echo -e "${YELLOW}Hint: The unique ID of the specific A/AAAA record you want to update (e.g., your dynamic subdomain).${NC}"
+                    read -r -p "Enter new CF Record ID (e.g., 5f59b24f...): " new_value
+                    sudo sed -i "s|CF_RECORD_ID=\".*\"|CF_RECORD_ID=\"$new_value\"|" "$CONFIG_FILE"
+                    echo -e "${GREEN}Record ID updated.${NC}"
+                fi
                 ;;
             5)
-                echo -e "${YELLOW}راهنما: آدرس کامل دامنه/زیردامنه‌ای که می‌خواهید IP آن به‌روز شود.${NC}"
-                read -r -p "Enter new CF Record Name (Domain) (مثال: ddns.yourdomain.com): " new_value
-                sudo sed -i "s|CF_RECORD_NAME=\".*\"|CF_RECORD_NAME=\"$new_value\"|" "$CONFIG_FILE"
-                echo -e "${GREEN}Record Name updated.${NC}"
+                if confirm_edit "CF Record Name"; then
+                    echo -e "${YELLOW}Hint: The full domain name of the record (e.g., ddns.example.com).${NC}"
+                    read -r -p "Enter new CF Record Name (Domain) (e.g., sub.yourdomain.com): " new_value
+                    sudo sed -i "s|CF_RECORD_NAME=\".*\"|CF_RECORD_NAME=\"$new_value\"|" "$CONFIG_FILE"
+                    echo -e "${GREEN}Record Name updated.${NC}"
+                fi
                 ;;
             6)
-                read -r -p "Enter new Update Interval (minutes, e.g. 5): " new_value
-                if [[ "$new_value" =~ ^[0-9]+$ ]]; then
-                    sudo sed -i "s|UPDATE_INTERVAL=.*|UPDATE_INTERVAL=$new_value|" "$CONFIG_FILE"
-                    update_cron # Update cron job immediately
-                    echo -e "${GREEN}Interval updated and Cron Job rescheduled.${NC}"
-                else
-                    echo -e "${RED}Invalid input. Please enter a number.${NC}"
+                if confirm_edit "Update Interval"; then
+                    read -r -p "Enter new Update Interval (minutes, e.g. 5): " new_value
+                    if [[ "$new_value" =~ ^[0-9]+$ ]]; then
+                        sudo sed -i "s|UPDATE_INTERVAL=.*|UPDATE_INTERVAL=$new_value|" "$CONFIG_FILE"
+                        update_cron
+                        echo -e "${GREEN}Interval updated and Cron Job rescheduled.${NC}"
+                    else
+                        echo -e "${RED}Invalid input. Please enter a number.${NC}"
+                    fi
                 fi
                 ;;
             7)
@@ -176,13 +195,13 @@ change_settings() {
                 fi
                 ;;
             8)
-                return # Back to main menu
+                return
                 ;;
             *)
                 echo -e "${RED}Invalid selection, please try again.${NC}"
                 ;;
         esac
-        settings_loop # Loop back to show settings again
+        settings_loop
     }
 
     settings_loop
@@ -196,15 +215,15 @@ case "$1" in
     "disable-cron")
         disable_cron
         ;;
-    "update-ip") # Command used by option 1 (Run Check Manually)
-        $CORE_SCRIPT
+    "update-ip") 
+        $CORE_SCRIPT "MANUAL"
         ;;
     *)
         while true; do
             show_menu
             read -r -p "Select an option: " OPTION
             case $OPTION in
-                1) $CORE_SCRIPT ;;
+                1) $CORE_SCRIPT "MANUAL" ;;
                 2) view_log ;;
                 3) change_settings ;;
                 4) uninstall_script ;;
