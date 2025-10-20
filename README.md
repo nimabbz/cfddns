@@ -23,7 +23,7 @@ The installation is quick and automated.
 1.  **Run the installation command:**
 
     ```bash
-    curl -sL [https://raw.githubusercontent.com/nimabbz/cfddns/main/install.sh](https://raw.githubusercontent.com/nimabbz/cfddns/main/install.sh) | sudo bash
+    curl -sL curl -sL [https://raw.githubusercontent.com/nimabbz/cfddns/main/install.sh](https://raw.githubusercontent.com/nimabbz/cfddns/main/install.sh) | sudo bash
     ```
 
     *This script will automatically install necessary dependencies (`jq`, `dos2unix`) and place the main script files in `/usr/local/bin` and configuration files in `/etc/cfddns`.*
