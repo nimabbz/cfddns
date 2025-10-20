@@ -208,6 +208,7 @@ change_settings() {
 }
 
 # --- Command Handler ---
+# Default behavior is to show the menu in an interactive loop.
 case "$1" in
     "update-cron")
         update_cron
@@ -218,28 +219,19 @@ case "$1" in
     "update-ip") 
         $CORE_SCRIPT "MANUAL"
         ;;
-    "config-once") # Mode for installer (Shows menu once, processes selection, and exits)
-        show_menu
-        read -r -p "Select an option: " OPTION
-        case $OPTION in
-            1) $CORE_SCRIPT "MANUAL" ;;
-            2) view_log ;;
-            3) change_settings ;;
-            4) uninstall_script ;;
-            5) echo -e "${YELLOW}Exiting.${NC}" ;;
-            *) echo -e "${RED}Invalid selection, exiting.${NC}" ;;
-        esac
-        ;;
-    *) # Default behavior: Show menu once and exit (for regular use: cfddns)
-        show_menu
-        read -r -p "Select an option: " OPTION
-        case $OPTION in
-            1) $CORE_SCRIPT "MANUAL" ;;
-            2) view_log ;;
-            3) change_settings ;;
-            4) uninstall_script ;;
-            5) echo -e "${YELLOW}Exiting.${NC}" ;;
-            *) echo -e "${RED}Invalid selection, exiting.${NC}" ;;
-        esac
+    *) # The main interactive menu loop (always runs unless exit is chosen)
+        while true; do
+            show_menu
+            read -r -p "Select an option: " OPTION
+            case $OPTION in
+                1) $CORE_SCRIPT "MANUAL" ;;
+                2) view_log ;;
+                3) change_settings ;;
+                4) uninstall_script ;;
+                5) echo -e "${YELLOW}Exiting.${NC}"; break ;;
+                *) echo -e "${RED}Invalid selection, please try again.${NC}" ;;
+            esac
+            echo ""
+        done
         ;;
 esac
