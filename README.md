@@ -69,14 +69,11 @@ The script logs all successful updates, IP change detections, and API errors to:
 `/var/log/cfddns.log`
 
 If the script fails to update, check this log file first for common API errors:
-Cloudflare Error Code: 10001
-Description: Authentication Failed. The API Key/Token is invalid, revoked, or lacks the necessary permissions (Zone:DNS:Edit).
-Solution: Solution: Create a new API Token in the Cloudflare dashboard with the correct Zone:DNS:Edit permissions and update Option 2 in the settings menu.
 
-Cloudflare Error Code: 7003
-Description: Invalid Object Identifier. The API request could not be routed, usually because the Zone ID or Record ID is incorrect or mistyped in the configuration.
-Solution: Solution: Double-check Option 3 (Zone ID) and Option 4 (Record ID) against your Cloudflare dashboard and ensure they are correct.
-
+| Cloudflare Error Code | Description | Solution |
+| :---: | :--- |
+| **10001** | **Authentication Failed.** The API Key/Token is invalid, revoked, or lacks the necessary permissions (Zone:DNS:Edit). | Solution: Create a new API Token in the Cloudflare dashboard with the correct Zone:DNS:Edit permissions and update Option 2 in the settings menu. |
+| **7003** | **Invalid Object Identifier.** The API request could not be routed, usually because the Zone ID or Record ID is incorrect or mistyped in the configuration. | Double-check Option 3 (Zone ID) and Option 4 (Record ID) against your Cloudflare dashboard and ensure they are correct. |
 
 
 ## 🗑️ Uninstallation
