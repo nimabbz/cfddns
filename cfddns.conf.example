@@ -1,0 +1,23 @@
+# Cloudflare DDNS Configuration File
+# This file is sourced by the main script and contains sensitive API keys.
+
+# Cloudflare Email
+CF_EMAIL=""
+
+# Cloudflare API Token (Recommended over Global Key)
+CF_API_KEY=""
+
+# Cloudflare Zone ID
+CF_ZONE_ID=""
+
+# Cloudflare DNS Record ID
+CF_RECORD_ID=""
+
+# Domain name to update
+CF_RECORD_NAME=""
+
+# Update Interval in minutes (used for Cron Job setup)
+UPDATE_INTERVAL=5
+
+# Enable/Disable Cron Job (1=Active, 0=Inactive)
+CRON_ACTIVE=1

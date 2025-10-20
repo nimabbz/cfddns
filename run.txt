@@ -1,0 +1,2 @@
+# توجه: YourUsername را با نام کاربری خود در گیت‌هاب جایگزین کنید
+curl -sL https://raw.githubusercontent.com/nimabbz/cfddns/main/install.sh | sudo bash
