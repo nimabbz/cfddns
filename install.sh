@@ -56,4 +56,4 @@ echo "You MUST now enter your Cloudflare API details, Zone ID, and Record ID."
 echo -e "\n🔥 ${YELLOW}Starting Configuration Menu...${NC}"
 
 # Automatically run the CLI after installation for configuration
-$CLI_SCRIPT
+$CLI_SCRIPT "config-once"
