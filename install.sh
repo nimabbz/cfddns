@@ -40,15 +40,21 @@ sudo chmod 600 "$CONFIG_FILE"
 
 # Prompt user for initial sensitive data
 echo ""
-echo "🚨 SECURITY NOTE: Please enter your Cloudflare details now:"
-read -r -p "Enter CF Email: " CF_EMAIL_TEMP
+echo "🚨 SECURITY NOTE: Please enter your Cloudflare details now. You can update these later in $CONFIG_FILE"
+read -r -p "Enter CF Email (e.g., user@example.com): " CF_EMAIL_TEMP
 read -r -p "Enter CF API Key/Token: " CF_API_KEY_TEMP
 
 # Use 'sed' to replace the empty values in the config file
 sudo sed -i "s|CF_EMAIL=\"\"|CF_EMAIL=\"$CF_EMAIL_TEMP\"|" "$CONFIG_FILE"
 sudo sed -i "s|CF_API_KEY=\"\"|CF_API_KEY=\"$CF_API_KEY_TEMP\"|" "$CONFIG_FILE"
 
-echo "Email and API Key saved to $CONFIG_FILE. Please add Zone/Record IDs manually."
+# Check if sed was successful
+if [ $? -ne 0 ]; then
+    echo "ERROR: Sed failed to update config file. Please edit $CONFIG_FILE manually."
+    exit 1
+fi
+
+echo "Email and API Key saved. You must now manually add Zone ID and Record ID."
 
 # 6. Final Instructions
 echo "--- Installation Complete! ---"
