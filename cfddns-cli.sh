@@ -124,6 +124,7 @@ uninstall_script() {
 }
 
 # Function to display the main menu
+# Function to display the main menu
 show_menu() {
     load_config
     local CURRENT_VERSION=$(get_current_version) 
@@ -135,7 +136,7 @@ show_menu() {
     fi
     
     echo -e "${BLUE}-------------------------------------${NC}"
-    echo -e "${YELLOW} Cloudflare Dynamic DNS Manager (cfddns)${NC}"
+    echo -e "${YELLOW} Cloudflare Dynamic DNS Manager (cfddns) - v$CURRENT_VERSION${NC}" 
     echo -e "${BLUE}-------------------------------------${NC}"
     echo -e " ${GREEN}➔${NC} Current Domain:  ${CF_RECORD_NAME:-${RED}NOT SET${NC}}"
     echo -e " ${GREEN}➔${NC} Update Interval: ${UPDATE_INTERVAL:-5} minutes"
@@ -144,12 +145,12 @@ show_menu() {
     echo -e " ${YELLOW}1) ${NC}Run Check Manually (Test)"
     echo -e " ${YELLOW}2) ${NC}View Log File (${BLUE}/var/log/cfddns.log${NC})"
     echo -e " ${YELLOW}3) ${NC}Change Settings (API/ID/Interval/Toggle Cron/Proxy)"
-    echo -e " ${YELLOW}4) ${NC}View Version (Current: $CURRENT_VERSION)"
-    echo -e " ${YELLOW}5) ${NC}Check/Run Update (From GitHub)"
-    echo -e " ${RED}6) ${NC}Uninstall Script (Permanently Remove)${NC}"
-    echo -e " ${YELLOW}7) ${NC}Exit"
+    echo -e " ${YELLOW}4) ${NC}Check/Run Update (From GitHub)" # آپدیت
+    echo -e " ${RED}5) ${NC}Uninstall Script (Permanently Remove)${NC}" # شیفت
+    echo -e " ${YELLOW}6) ${NC}Exit" # شیفت
     echo -e "${BLUE}-------------------------------------${NC}"
 }
+
 
 # Function to handle settings changes
 change_settings() {
@@ -326,10 +327,9 @@ case "$1" in
                 1) $CORE_SCRIPT "MANUAL" ;;
                 2) view_log ;;
                 3) change_settings ;;
-                4) echo -e "${YELLOW}Current Version: $(get_current_version)${NC}" ;;
-                5) check_and_update ;;
-                6) uninstall_script ;;
-                7) echo -e "${YELLOW}Exiting.${NC}"; break ;;
+                4) check_and_update ;; 
+                5) uninstall_script ;; 
+                6) echo -e "${YELLOW}Exiting.${NC}"; break ;; 
                 *) echo -e "${RED}Invalid selection, please try again.${NC}" ;;
             esac
             echo ""
