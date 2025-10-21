@@ -4,7 +4,9 @@
 # and updates the record if a difference is found.
 
 # --- Configuration Loading ---
-CONFIG_FILE="/etc/cfddns/cfddns.conf"
+CONFIG_DIR="/etc/cfddns"
+CONFIG_FILE="$CONFIG_DIR/cfddns.conf"
+VERSION_FILE="$CONFIG_DIR/VERSION.txt" # اضافه شده
 if [ -f "$CONFIG_FILE" ]; then
     source "$CONFIG_FILE"
 else

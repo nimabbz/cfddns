@@ -8,6 +8,7 @@ CONFIG_DIR="/etc/cfddns"
 CONFIG_FILE="$CONFIG_DIR/cfddns.conf"
 CORE_SCRIPT="$INSTALL_DIR/cfddns.sh"
 CLI_SCRIPT="$INSTALL_DIR/cfddns"
+VERSION_FILE="$CONFIG_DIR/VERSION.txt" # اضافه شده
 
 # ANSI Color Codes (for cleaner terminal output)
 RED='\033[0;31m'
@@ -26,10 +27,11 @@ if ! command -v jq &> /dev/null; then
 fi
 
 # 2. Download Core Scripts
-echo "Downloading core scripts..."
+echo "Downloading core scripts and version file..."
 sudo mkdir -p "$CONFIG_DIR"
 sudo curl -s "$REPO/cfddns.sh" -o "$CORE_SCRIPT"
-sudo curl -s "$REPO/cfddns-cli.sh" -o "$CLI_SCRIPT" # This file now includes the stable while-loop
+sudo curl -s "$REPO/cfddns-cli.sh" -o "$CLI_SCRIPT"
+sudo curl -s "$REPO/VERSION.txt" -o "$VERSION_FILE" # دانلود فایل ورژن
 
 # 3. Clean and Set Permissions
 echo "Setting permissions..."
@@ -54,5 +56,3 @@ echo -e "\n${GREEN}--- Installation Complete! ---${NC}"
 echo "The configuration file has been saved to ${BLUE}$CONFIG_FILE${NC}."
 echo "You MUST now enter your Cloudflare API details, Zone ID, and Record ID."
 echo -e "\n🔥 ${YELLOW}To start the configuration menu, run: cfddns${NC}"
-
-# --- REMOVED: Automatic execution of $CLI_SCRIPT to prevent infinite loop ---
