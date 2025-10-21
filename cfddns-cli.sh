@@ -92,7 +92,7 @@ show_menu() {
     echo -e "${BLUE}-------------------------------------${NC}"
     echo -e " ${YELLOW}1) ${NC}Run Check Manually (Test)"
     echo -e " ${YELLOW}2) ${NC}View Log File (${BLUE}/var/log/cfddns.log${NC})"
-    echo -e " ${YELLOW}3) ${NC}Change Settings (API/ID/Interval/Toggle Cron)"
+    echo -e " ${YELLOW}3) ${NC}Change Settings (API/ID/Interval/Toggle Cron/Proxy)"
     echo -e " ${RED}4) ${NC}Uninstall Script (Permanently Remove)${NC}"
     echo -e " ${YELLOW}5) ${NC}Exit"
     echo -e "${BLUE}-------------------------------------${NC}"
@@ -105,6 +105,14 @@ change_settings() {
     settings_loop() {
         load_config
         
+        # Determine current proxy status display
+        PROXY_DISPLAY="${YELLOW}KEEP EXISTING${NC}"
+        if [ "$CF_PROXY_STATUS" == "true" ]; then
+            PROXY_DISPLAY="${GREEN}Proxied (True)${NC}"
+        elif [ "$CF_PROXY_STATUS" == "false" ]; then
+            PROXY_DISPLAY="${RED}DNS Only (False)${NC}"
+        fi
+        
         echo -e "\n${BLUE}-------------------------------------${NC}"
         echo -e "${YELLOW} Current Settings:${NC}"
         echo -e "${BLUE}-------------------------------------${NC}"
@@ -115,10 +123,11 @@ change_settings() {
         echo -e " 5) CF Record Name (Full Domain): ${CF_RECORD_NAME:-${RED}NOT SET${NC}}"
         echo -e " 6) Update Interval: ${UPDATE_INTERVAL:-5} min"
         echo -e " 7) Toggle Cron (${CRON_ACTIVE:-0})"
-        echo -e " 8) Back to Main Menu"
+        echo -e " 8) Set Proxy Status (Current: $PROXY_DISPLAY)"
+        echo -e " 9) Back to Main Menu"
         echo -e "${BLUE}-------------------------------------${NC}"
 
-        read -r -p "Select setting to change (1-8): " choice
+        read -r -p "Select setting to change (1-9): " choice
 
         # Function to confirm editing
         confirm_edit() {
@@ -131,12 +140,24 @@ change_settings() {
             return 0
         }
 
+        # Function to safely update the config file by replacing or appending
+        update_config_key() {
+            local key=$1
+            local value=$2
+            # Use sed to replace the existing line or append if not found
+            if sudo grep -q "^$key=" "$CONFIG_FILE"; then
+                sudo sed -i "s|^$key=.*|$key=\"$value\"|" "$CONFIG_FILE"
+            else
+                echo "$key=\"$value\"" | sudo tee -a "$CONFIG_FILE" > /dev/null
+            fi
+        }
+
         case $choice in
             1)
                 if confirm_edit "CF Email"; then
                     echo -e "${YELLOW}Hint: The email linked to your Cloudflare account.${NC}"
                     read -r -p "Enter new CF Email (e.g., user@domain.com): " new_value
-                    sudo sed -i "s|CF_EMAIL=\".*\"|CF_EMAIL=\"$new_value\"|" "$CONFIG_FILE"
+                    update_config_key "CF_EMAIL" "$new_value"
                     echo -e "${GREEN}Email updated.${NC}"
                 fi
                 ;;
@@ -144,7 +165,7 @@ change_settings() {
                 if confirm_edit "CF API Key/Token"; then
                     echo -e "${YELLOW}Hint: Use an API Token (preferable) with Zone.DNS Edit permissions.${NC}"
                     read -r -p "Enter new CF API Key/Token (e.g., 6717d793...): " new_value
-                    sudo sed -i "s|CF_API_KEY=\".*\"|CF_API_KEY=\"$new_value\"|" "$CONFIG_FILE"
+                    update_config_key "CF_API_KEY" "$new_value"
                     echo -e "${GREEN}API Key updated.${NC}"
                 fi
                 ;;
@@ -152,7 +173,7 @@ change_settings() {
                 if confirm_edit "CF Zone ID"; then
                     echo -e "${YELLOW}Hint: Found on your domain's Cloudflare dashboard summary page.${NC}"
                     read -r -p "Enter new CF Zone ID (e.g., 3f2c997f...): " new_value
-                    sudo sed -i "s|CF_ZONE_ID=\".*\"|CF_ZONE_ID=\"$new_value\"|" "$CONFIG_FILE"
+                    update_config_key "CF_ZONE_ID" "$new_value"
                     echo -e "${GREEN}Zone ID updated.${NC}"
                 fi
                 ;;
@@ -160,7 +181,7 @@ change_settings() {
                 if confirm_edit "CF Record ID"; then
                     echo -e "${YELLOW}Hint: The unique ID of the specific A/AAAA record you want to update (e.g., your dynamic subdomain).${NC}"
                     read -r -p "Enter new CF Record ID (e.g., 5f59b24f...): " new_value
-                    sudo sed -i "s|CF_RECORD_ID=\".*\"|CF_RECORD_ID=\"$new_value\"|" "$CONFIG_FILE"
+                    update_config_key "CF_RECORD_ID" "$new_value"
                     echo -e "${GREEN}Record ID updated.${NC}"
                 fi
                 ;;
@@ -168,7 +189,7 @@ change_settings() {
                 if confirm_edit "CF Record Name"; then
                     echo -e "${YELLOW}Hint: The full domain name of the record (e.g., ddns.example.com).${NC}"
                     read -r -p "Enter new CF Record Name (Domain) (e.g., sub.yourdomain.com): " new_value
-                    sudo sed -i "s|CF_RECORD_NAME=\".*\"|CF_RECORD_NAME=\"$new_value\"|" "$CONFIG_FILE"
+                    update_config_key "CF_RECORD_NAME" "$new_value"
                     echo -e "${GREEN}Record Name updated.${NC}"
                 fi
                 ;;
@@ -194,7 +215,32 @@ change_settings() {
                     echo -e "${GREEN}Cron Job Enabled.${NC}"
                 fi
                 ;;
-            8)
+            8) # Set Proxy Status
+                echo -e "\n${RED}⚠️ WARNING: Changing Proxy Status ⚠️${NC}"
+                echo "Changing the proxy status may disconnect your server if services are not correctly configured."
+                echo "If access is lost, manually restore the Gray Cloud (DNS Only) setting on Cloudflare."
+
+                read -r -p "Enter new Proxy Status (true/false/keep): " new_value
+                
+                # Validation and update
+                case "$new_value" in
+                    "true"|"false")
+                        # Remove existing and set new value
+                        sudo sed -i '/^CF_PROXY_STATUS=/d' "$CONFIG_FILE"
+                        echo "CF_PROXY_STATUS=\"$new_value\"" | sudo tee -a "$CONFIG_FILE" > /dev/null
+                        echo -e "${GREEN}Proxy Status set to $new_value. Changes will apply on the next check.${NC}"
+                        ;;
+                    "keep")
+                        # Remove the variable to make the core script KEEP the current setting
+                        sudo sed -i '/^CF_PROXY_STATUS=/d' "$CONFIG_FILE"
+                        echo -e "${YELLOW}Proxy Status set to KEEP EXISTING. The script will not modify the proxy setting.${NC}"
+                        ;;
+                    *)
+                        echo -e "${RED}Invalid input. Please enter 'true', 'false', or 'keep'.${NC}"
+                        ;;
+                esac
+                ;;
+            9)
                 return
                 ;;
             *)
@@ -208,7 +254,6 @@ change_settings() {
 }
 
 # --- Command Handler ---
-# Default behavior is to show the menu in an interactive loop.
 case "$1" in
     "update-cron")
         update_cron
@@ -219,7 +264,8 @@ case "$1" in
     "update-ip") 
         $CORE_SCRIPT "MANUAL"
         ;;
-    *) # The main interactive menu loop (always runs unless exit is chosen)
+    *) # Default behavior: Show menu, execute command, and loop back
+        # The main interactive menu loop
         while true; do
             show_menu
             read -r -p "Select an option: " OPTION

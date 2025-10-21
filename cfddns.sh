@@ -14,7 +14,6 @@ fi
 
 LOG_FILE="/var/log/cfddns.log"
 TTL="120"
-PROXY="true"
 EXEC_MODE=${1:-CRON} # Default mode is CRON, can be set to MANUAL
 
 # --- Dependency Check ---
@@ -40,14 +39,21 @@ get_cf_ip() {
 update_cf_ip() {
     local NEW_IP=$1
     local PAYLOAD
+    local PROXY_SETTING=""
     
+    # Check if PROXY status is explicitly set in config (true or false).
+    # If not set, the PAYLOAD will not contain the "proxied" field, and Cloudflare will keep the existing setting.
+    if [ "$CF_PROXY_STATUS" == "true" ] || [ "$CF_PROXY_STATUS" == "false" ]; then
+        PROXY_SETTING=",\"proxied\": $CF_PROXY_STATUS"
+    fi
+
     PAYLOAD=$(cat <<EOF
 {
   "type": "A",
   "name": "$CF_RECORD_NAME",
   "content": "$NEW_IP",
-  "ttl": $TTL,
-  "proxied": $PROXY
+  "ttl": $TTL
+  $PROXY_SETTING
 }
 EOF
 )

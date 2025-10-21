@@ -21,3 +21,9 @@ UPDATE_INTERVAL=5
 
 # Enable/Disable Cron Job (1=Active, 0=Inactive)
 CRON_ACTIVE=1
+
+# Optional: Set the proxy status (Cloud/Orange Cloud).
+# true = Proxied (Orange Cloud)
+# false = DNS Only (Gray Cloud)
+# If this variable is NOT present, the script will KEEP the existing setting on Cloudflare.
+# CF_PROXY_STATUS=""
