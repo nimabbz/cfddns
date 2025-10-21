@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 
-CONFIG_FILE="/etc/cfddns/cfddns.conf"
+CONFIG_DIR="/etc/cfddns"
+CONFIG_FILE="$CONFIG_DIR/cfddns.conf"
+VERSION_FILE="$CONFIG_DIR/VERSION.txt"
 CORE_SCRIPT="/usr/local/bin/cfddns.sh"
+CLI_SCRIPT="/usr/local/bin/cfddns"
 
 # --- ANSI Color Codes ---
 RED='\033[0;31m'
@@ -15,6 +18,15 @@ load_config() {
     if [ -f "$CONFIG_FILE" ]; then
         dos2unix -q "$CONFIG_FILE" 2>/dev/null
         source "$CONFIG_FILE"
+    fi
+}
+
+# Function to get the current version
+get_current_version() {
+    if [ -f "$VERSION_FILE" ]; then
+        cat "$VERSION_FILE"
+    else
+        echo "00000000.0000"
     fi
 }
 
@@ -44,6 +56,44 @@ disable_cron() {
 view_log() {
     echo -e "${YELLOW}--- Last 20 lines of Log File ---${NC}"
     sudo tail -n 20 /var/log/cfddns.log || echo -e "${YELLOW}Log file not found or empty.${NC}"
+}
+
+# Function to check for update and apply it
+check_and_update() {
+    local LOCAL_VERSION=$(get_current_version)
+    echo -e "${YELLOW}Checking for updates on GitHub...${NC}"
+
+    local REPO="https://raw.githubusercontent.com/nimabbz/cfddns/main"
+    local LATEST_VERSION=$(curl -s "$REPO/VERSION.txt")
+    
+    if [ -z "$LATEST_VERSION" ]; then
+        echo -e "${RED}ERROR: Could not fetch latest version from GitHub. Check network connection.${NC}"
+        return
+    fi
+    
+    echo -e "Local Version: ${YELLOW}$LOCAL_VERSION${NC}"
+    echo -e "Latest Version: ${GREEN}$LATEST_VERSION${NC}"
+    
+    # Simple string comparison (for YYYYMMDD.HHMM format, this is sufficient)
+    if [[ "$LOCAL_VERSION" < "$LATEST_VERSION" ]]; then
+        echo -e "${GREEN}Update available! Applying changes...${NC}"
+        
+        # Applying updates: Re-run the core part of the installer for scripts
+        sudo curl -s "$REPO/cfddns.sh" -o "$CORE_SCRIPT"
+        sudo curl -s "$REPO/cfddns-cli.sh" -o "$CLI_SCRIPT"
+        sudo curl -s "$REPO/VERSION.txt" -o "$VERSION_FILE" # Update version file
+        
+        # Clean and set permissions
+        sudo dos2unix -q "$CORE_SCRIPT" "$CLI_SCRIPT"
+        sudo chmod +x "$CORE_SCRIPT"
+        sudo chmod +x "$CLI_SCRIPT"
+        
+        echo -e "${GREEN}Update complete! New version: $(get_current_version). Please restart cfddns.${NC}"
+    elif [[ "$LOCAL_VERSION" == "$LATEST_VERSION" ]]; then
+        echo -e "${GREEN}You are running the latest version: $LOCAL_VERSION${NC}"
+    else
+        echo -e "${YELLOW}Local version is newer than GitHub's. Potential issue or custom build.${NC}"
+    fi
 }
 
 # Function to uninstall the script
@@ -76,6 +126,7 @@ uninstall_script() {
 # Function to display the main menu
 show_menu() {
     load_config
+    local CURRENT_VERSION=$(get_current_version) 
     
     if [ "$CRON_ACTIVE" == "1" ]; then
         STATUS_TEXT="${GREEN}ACTIVE${NC}"
@@ -93,8 +144,10 @@ show_menu() {
     echo -e " ${YELLOW}1) ${NC}Run Check Manually (Test)"
     echo -e " ${YELLOW}2) ${NC}View Log File (${BLUE}/var/log/cfddns.log${NC})"
     echo -e " ${YELLOW}3) ${NC}Change Settings (API/ID/Interval/Toggle Cron/Proxy)"
-    echo -e " ${RED}4) ${NC}Uninstall Script (Permanently Remove)${NC}"
-    echo -e " ${YELLOW}5) ${NC}Exit"
+    echo -e " ${YELLOW}4) ${NC}View Version (Current: $CURRENT_VERSION)"
+    echo -e " ${YELLOW}5) ${NC}Check/Run Update (From GitHub)"
+    echo -e " ${RED}6) ${NC}Uninstall Script (Permanently Remove)${NC}"
+    echo -e " ${YELLOW}7) ${NC}Exit"
     echo -e "${BLUE}-------------------------------------${NC}"
 }
 
@@ -273,8 +326,10 @@ case "$1" in
                 1) $CORE_SCRIPT "MANUAL" ;;
                 2) view_log ;;
                 3) change_settings ;;
-                4) uninstall_script ;;
-                5) echo -e "${YELLOW}Exiting.${NC}"; break ;;
+                4) echo -e "${YELLOW}Current Version: $(get_current_version)${NC}" ;;
+                5) check_and_update ;;
+                6) uninstall_script ;;
+                7) echo -e "${YELLOW}Exiting.${NC}"; break ;;
                 *) echo -e "${RED}Invalid selection, please try again.${NC}" ;;
             esac
             echo ""
