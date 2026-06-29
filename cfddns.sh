@@ -1,3 +1,4 @@
+sudo tee /usr/local/bin/cfddns.sh << 'EOF'
 #!/usr/bin/env bash
 
 # This script checks the server's current public IP against the Cloudflare DNS record
@@ -6,7 +7,7 @@
 # --- Configuration Loading ---
 CONFIG_DIR="/etc/cfddns"
 CONFIG_FILE="$CONFIG_DIR/cfddns.conf"
-VERSION_FILE="$CONFIG_DIR/VERSION.txt" # اضافه شده
+VERSION_FILE="$CONFIG_DIR/VERSION.txt"
 if [ -f "$CONFIG_FILE" ]; then
     source "$CONFIG_FILE"
 else
@@ -43,8 +44,11 @@ update_cf_ip() {
     local PAYLOAD
     local PROXY_SETTING=""
     
-    # Check if PROXY status is explicitly set in config (true or false).
-    # If not set, the PAYLOAD will not contain the "proxied" field, and Cloudflare will keep the existing setting.
+    # Force default to false (Gray Cloud / DNS Only) if not explicitly set to true
+    if [ -z "$CF_PROXY_STATUS" ]; then
+        CF_PROXY_STATUS="false"
+    fi
+
     if [ "$CF_PROXY_STATUS" == "true" ] || [ "$CF_PROXY_STATUS" == "false" ]; then
         PROXY_SETTING=",\"proxied\": $CF_PROXY_STATUS"
     fi
@@ -104,3 +108,5 @@ else
     # CRON mode, no change: exit silently
     exit 0
 fi
+EOF
+sudo chmod +x /usr/local/bin/cfddns.sh
