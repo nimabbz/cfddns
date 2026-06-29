@@ -96,8 +96,11 @@ curl -s -X GET "[https://api.cloudflare.com/client/v4/zones/YOUR_ZONE_ID/dns_rec
      -H "Authorization: Bearer YOUR_API_TOKEN" \
      -H "Content-Type: application/json" | grep -o '"id":"[^"]*"' | head -n 1
 
-     The output will look something like this: "id":"1234567.....abcde"
-     Copy the 32-character string inside the quotes. That is your Record ID!
+The output will look something like this: "id":"60ea.........acf22"
+
+Copy the 32-character string inside the quotes. That is your Record ID!
+---
+
 ## 📝 Troubleshooting & Logging
 The script logs all successful updates, IP change detections, and API errors to:
 `/var/log/cfddns.log`
