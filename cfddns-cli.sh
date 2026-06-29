@@ -1,4 +1,4 @@
-sudo tee /usr/local/bin/cfddns-cli.sh << 'EOF'
+sudo tee /usr/local/bin/cfddns << 'EOF'
 #!/usr/bin/env bash
 
 CONFIG_DIR="/etc/cfddns"
@@ -102,4 +102,4 @@ while true; do
     esac
 done
 EOF
-sudo chmod +x /usr/local/bin/cfddns-cli.sh
+sudo chmod +x /usr/local/bin/cfddns
