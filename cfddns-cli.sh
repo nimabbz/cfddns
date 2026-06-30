@@ -47,20 +47,6 @@ quick_setup() {
     echo -e "${GREEN}✅ Setup Complete!${NC}"; sleep 2
 }
 
-view_settings() {
-    load_config
-    echo -e "\n${CYAN}╭──────────────────────────────────────────────────╮${NC}"
-    echo -e "${CYAN}│${NC}               ${BOLD}CURRENT SETTINGS${NC}                   ${CYAN}│${NC}"
-    echo -e "${CYAN}╰──────────────────────────────────────────────────╯${NC}"
-    echo -e " 🔹 ${BOLD}API Token:${NC}   ${CF_API_KEY:-${RED}Not Set${NC}}"
-    echo -e " 🔹 ${BOLD}Zone ID:${NC}     ${CF_ZONE_ID:-${RED}Not Set${NC}}"
-    echo -e " 🔹 ${BOLD}Record ID:${NC}   ${CF_RECORD_ID:-${RED}Not Set${NC}}"
-    echo -e " 🔹 ${BOLD}Domain:${NC}      ${CF_RECORD_NAME:-${RED}Not Set${NC}}"
-    echo -e " 🔹 ${BOLD}Interval:${NC}    ${UPDATE_INTERVAL:-5} min"
-    echo -e "${CYAN}────────────────────────────────────────────────────${NC}"
-    read -r -p "Press Enter to return to the main menu..."
-}
-
 do_update() {
     echo -e "\n${YELLOW}🔍 Checking for updates from GitHub...${NC}"
     LOCAL_VER=$(get_version)
@@ -97,7 +83,7 @@ show_menu() {
     clear
     echo -e "${CYAN}╭──────────────────────────────────────────────────╮${NC}"
     echo -e "${CYAN}│${NC} ${BOLD}         ☁️ CLOUDFLARE DDNS MANAGER          ${NC} ${CYAN}│${NC}"
-    echo -e "${CYAN}│${NC}                   v$(get_version)                     ${CYAN}│${NC}"
+    echo -e "${CYAN}│${NC}                  v$(get_version)                  ${CYAN}│${NC}"
     echo -e "${CYAN}╰──────────────────────────────────────────────────╯${NC}"
 
     if [ -n "$CF_ZONE_ID" ] && [ -n "$CF_API_KEY" ]; then
@@ -120,10 +106,10 @@ show_menu() {
     echo -e " ⏱️  ${BOLD}Cron Job:${NC}   [$CR_TXT] (Every ${UPDATE_INTERVAL:-5}m)"
     echo -e "${CYAN}────────────────────────────────────────────────────${NC}"
     echo -e "  ${BOLD}1)${NC} 🚀 Quick Auto-Setup Wizard"
-    echo -e "  ${BOLD}2)${NC} ⚙️  View Current Settings"
+    echo -e "  ${BOLD}2)${NC} ⚙️  Manual Settings (nano)"
     echo -e "  ${BOLD}3)${NC} 🔍 Run Manual Check"
     echo -e "  ${BOLD}4)${NC} 📄 View Logs"
-    echo -e "  ${BOLD}5)${NC} ⬇️  Check for Updates"
+    echo -e "  ${BOLD}5)${NC} ⬇️  Update from GitHub"
     echo -e "  ${RED}${BOLD}0) 🚪 Exit${NC}"
     echo -e "${CYAN}────────────────────────────────────────────────────${NC}"
 }
@@ -133,7 +119,7 @@ while true; do
     read -r -p "Select an option: " OPTION
     case $OPTION in
         1) quick_setup ;;
-        2) view_settings ;;
+        2) sudo nano "$CONFIG_FILE" ;;
         3) 
             echo -e "\n${YELLOW}🔍 Running manual check...${NC}"
             sudo bash "$CORE_SCRIPT" "MANUAL"
