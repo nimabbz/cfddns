@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 
-CONFIG_FILE="/etc/cfddns/cfddns.conf"
+CONFIG_DIR="/etc/cfddns"
+CONFIG_FILE="$CONFIG_DIR/cfddns.conf"
+VERSION_FILE="$CONFIG_DIR/VERSION.txt"
 CORE_SCRIPT="/usr/local/bin/cfddns.sh"
-VERSION="2026.Final"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -12,6 +13,7 @@ BOLD='\033[1m'
 NC='\033[0m'
 
 load_config() { if [ -f "$CONFIG_FILE" ]; then source "$CONFIG_FILE"; fi; }
+get_version() { if [ -f "$VERSION_FILE" ]; then cat "$VERSION_FILE"; else echo "Unknown"; fi; }
 
 update_cron() {
     load_config
@@ -45,13 +47,49 @@ quick_setup() {
     echo -e "${GREEN}✅ Setup Complete!${NC}"; sleep 2
 }
 
+view_settings() {
+    load_config
+    echo -e "\n${CYAN}╭──────────────────────────────────────────────────╮${NC}"
+    echo -e "${CYAN}│${NC}               ${BOLD}CURRENT SETTINGS${NC}                   ${CYAN}│${NC}"
+    echo -e "${CYAN}╰──────────────────────────────────────────────────╯${NC}"
+    echo -e " 🔹 ${BOLD}API Token:${NC}   ${CF_API_KEY:-${RED}Not Set${NC}}"
+    echo -e " 🔹 ${BOLD}Zone ID:${NC}     ${CF_ZONE_ID:-${RED}Not Set${NC}}"
+    echo -e " 🔹 ${BOLD}Record ID:${NC}   ${CF_RECORD_ID:-${RED}Not Set${NC}}"
+    echo -e " 🔹 ${BOLD}Domain:${NC}      ${CF_RECORD_NAME:-${RED}Not Set${NC}}"
+    echo -e " 🔹 ${BOLD}Interval:${NC}    ${UPDATE_INTERVAL:-5} min"
+    echo -e "${CYAN}────────────────────────────────────────────────────${NC}"
+    read -r -p "Press Enter to return to the main menu..."
+}
+
 do_update() {
-    echo -e "\n${YELLOW}⬇️ Downloading latest files from GitHub...${NC}"
-    sudo curl -s "https://raw.githubusercontent.com/nimabbz/cfddns/main/cfddns.sh" -o "/usr/local/bin/cfddns.sh"
-    sudo curl -s "https://raw.githubusercontent.com/nimabbz/cfddns/main/cfddns-cli.sh" -o "/usr/local/bin/cfddns"
-    sudo chmod +x /usr/local/bin/cfddns.sh /usr/local/bin/cfddns
-    echo -e "${GREEN}✅ Update successful! Please restart cfddns.${NC}"
-    exit 0
+    echo -e "\n${YELLOW}🔍 Checking for updates from GitHub...${NC}"
+    LOCAL_VER=$(get_version)
+    REMOTE_VER=$(curl -s "https://raw.githubusercontent.com/nimabbz/cfddns/main/VERSION.txt")
+    
+    if [ -z "$REMOTE_VER" ]; then
+        echo -e "${RED}❌ Could not connect to GitHub to check versions.${NC}"; sleep 2; return
+    fi
+    
+    echo -e " 📦 Local version:  $LOCAL_VER"
+    echo -e " 🌐 Remote version: $REMOTE_VER"
+    
+    if [ "$LOCAL_VER" != "$REMOTE_VER" ]; then
+        echo ""
+        read -r -p "🆕 New version found! Do you want to update? (y/n): " confirm
+        if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
+            echo -e "${YELLOW}⬇️ Downloading latest files...${NC}"
+            sudo curl -s "https://raw.githubusercontent.com/nimabbz/cfddns/main/cfddns.sh" -o "/usr/local/bin/cfddns.sh"
+            sudo curl -s "https://raw.githubusercontent.com/nimabbz/cfddns/main/cfddns-cli.sh" -o "/usr/local/bin/cfddns"
+            sudo curl -s "https://raw.githubusercontent.com/nimabbz/cfddns/main/VERSION.txt" -o "$VERSION_FILE"
+            sudo chmod +x /usr/local/bin/cfddns.sh /usr/local/bin/cfddns
+            echo -e "${GREEN}✅ Update successful! Please restart cfddns.${NC}"
+            exit 0
+        else
+            echo -e "${YELLOW}Update canceled.${NC}"; sleep 2
+        fi
+    else
+        echo -e "${GREEN}✅ You are already using the latest version!${NC}"; sleep 2
+    fi
 }
 
 show_menu() {
@@ -59,7 +97,7 @@ show_menu() {
     clear
     echo -e "${CYAN}╭──────────────────────────────────────────────────╮${NC}"
     echo -e "${CYAN}│${NC} ${BOLD}         ☁️ CLOUDFLARE DDNS MANAGER          ${NC} ${CYAN}│${NC}"
-    echo -e "${CYAN}│${NC}                   v$VERSION                       ${CYAN}│${NC}"
+    echo -e "${CYAN}│${NC}                   v$(get_version)                     ${CYAN}│${NC}"
     echo -e "${CYAN}╰──────────────────────────────────────────────────╯${NC}"
 
     if [ -n "$CF_ZONE_ID" ] && [ -n "$CF_API_KEY" ]; then
@@ -82,10 +120,10 @@ show_menu() {
     echo -e " ⏱️  ${BOLD}Cron Job:${NC}   [$CR_TXT] (Every ${UPDATE_INTERVAL:-5}m)"
     echo -e "${CYAN}────────────────────────────────────────────────────${NC}"
     echo -e "  ${BOLD}1)${NC} 🚀 Quick Auto-Setup Wizard"
-    echo -e "  ${BOLD}2)${NC} ⚙️  Manual Settings (nano)"
+    echo -e "  ${BOLD}2)${NC} ⚙️  View Current Settings"
     echo -e "  ${BOLD}3)${NC} 🔍 Run Manual Check"
     echo -e "  ${BOLD}4)${NC} 📄 View Logs"
-    echo -e "  ${BOLD}5)${NC} ⬇️  Update from GitHub"
+    echo -e "  ${BOLD}5)${NC} ⬇️  Check for Updates"
     echo -e "  ${RED}${BOLD}0) 🚪 Exit${NC}"
     echo -e "${CYAN}────────────────────────────────────────────────────${NC}"
 }
@@ -95,8 +133,19 @@ while true; do
     read -r -p "Select an option: " OPTION
     case $OPTION in
         1) quick_setup ;;
-        2) sudo nano "$CONFIG_FILE" ;;
-        3) echo -e "\n${YELLOW}🔍 Running manual check...${NC}"; sudo bash "$CORE_SCRIPT" "MANUAL"; echo -e "${GREEN}✅ Done! Check logs (Option 4).${NC}"; sleep 2 ;;
+        2) view_settings ;;
+        3) 
+            echo -e "\n${YELLOW}🔍 Running manual check...${NC}"
+            sudo bash "$CORE_SCRIPT" "MANUAL"
+            echo -e "${GREEN}✅ Check completed!${NC}"
+            read -r -p "Do you want to view the logs now? (y/n): " view_log
+            if [[ "$view_log" == "y" || "$view_log" == "Y" ]]; then
+                echo -e "\n${YELLOW}📄 --- Last 15 Logs ---${NC}"
+                sudo tail -n 15 /var/log/cfddns.log
+                echo ""
+                read -r -p "Press Enter to return..."
+            fi
+            ;;
         4) echo -e "\n${YELLOW}📄 --- Last 15 Logs ---${NC}"; sudo tail -n 15 /var/log/cfddns.log; echo ""; read -r -p "Press Enter to return..." ;;
         5) do_update ;;
         0) clear; break ;;
